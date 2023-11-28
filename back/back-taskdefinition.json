@@ -1,0 +1,55 @@
+{
+    "containerDefinitions": [
+        {
+            "name": "back",
+            "image": "780539339462.dkr.ecr.us-east-1.amazonaws.com/casevault:back-GITHUB_SHA",
+            "cpu": 0,
+            "portMappings": [
+                {
+                    "name": "back-3000-tcp",
+                    "containerPort": 3000,
+                    "hostPort": 3000,
+                    "protocol": "tcp",
+                    "appProtocol": "http"
+                }
+            ],
+            "essential": true,
+            "environment": [],
+            "environmentFiles": [],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "ulimits": [],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-create-group": "true",
+                    "awslogs-group": "/ecs/back-taskdefinition",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "ecs"
+                },
+                "secretOptions": []
+            }
+        }
+    ],
+    "family": "back-taskdefinition",
+    "taskRoleArn": "arn:aws:iam::780539339462:role/ecsTaskExecutionRole",
+    "executionRoleArn": "arn:aws:iam::780539339462:role/ecsTaskExecutionRole",
+    "networkMode": "awsvpc",
+    "volumes": [],
+    "placementConstraints": [],
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "1024",
+    "memory": "3072",
+    "runtimePlatform": {
+        "cpuArchitecture": "X86_64",
+        "operatingSystemFamily": "LINUX"
+    },
+    "tags": [
+        {
+            "key": "label",
+            "value": "value"
+        }
+    ]
+}

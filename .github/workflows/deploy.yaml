@@ -1,0 +1,101 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Debug - Print Image Name
+      run: |
+        echo "AWS_REPO_URI=${{ secrets.AWS_REPO_URI }}"
+        echo "GITHUB_SHA=${{ github.sha }}"
+        echo "Full Image Name=${{ secrets.AWS_REPO_URI }}:${{ github.sha }}"
+
+
+    - name: Checkout código fuente
+      uses: actions/checkout@v2
+
+    - name: Iniciar sesión en AWS ECR
+      run: |
+        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.AWS_REPO_URI }}
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: us-east-1
+
+    - name: Construir y etiquetar imagen Docker
+      env: 
+        IMAGE_TAG: ${{ github.sha }}
+        ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        REGION: us-east-1
+        REPO_NAME: casevault
+      run: |
+        docker build -t sa_casevault-case-vault-front:latest -f front/Dockerfile ./front
+        docker build -t sa_casevault-case-vault-back:latest -f back/Dockerfile ./back
+        docker images
+        docker tag sa_casevault-case-vault-front:latest ${{ secrets.AWS_REPO_URI }}:front-${IMAGE_TAG}
+        docker tag sa_casevault-case-vault-back:latest ${{ secrets.AWS_REPO_URI }}:back-${IMAGE_TAG}
+        docker images
+        docker push ${{ secrets.AWS_REPO_URI }}:front-${IMAGE_TAG}
+        docker push ${{ secrets.AWS_REPO_URI }}:back-${IMAGE_TAG}
+        echo "build and push done"
+
+  deploy:
+    runs-on: ubuntu-latest
+  
+    needs: build
+  
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Actualizar definición de tarea en ECS - Frontend
+      env:
+        IMAGE_TAG: ${{ github.sha }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: us-east-1
+      run: |
+        GITHUB_SHA=$(git rev-parse HEAD)
+        sed -i "s/GITHUB_SHA/${GITHUB_SHA}/" front/front-taskdefinition.json
+        aws ecs register-task-definition --cli-input-json file://front/front-taskdefinition.json
+    - name: Actualizar definición de tarea en ECS - Backend
+      env:
+        IMAGE_TAG: ${{ github.sha }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: us-east-1
+      run: |
+        GITHUB_SHA=$(git rev-parse HEAD)
+        sed -i "s/GITHUB_SHA/${GITHUB_SHA}/" back/back-taskdefinition.json
+        aws ecs register-task-definition --cli-input-json file://back/back-taskdefinition.json
+
+    - name: Update ECS Service - Frontend
+      env:
+        IMAGE_TAG: ${{ github.sha }}
+        ECS_CLUSTER: casevault-cluster
+        ECS_SERVICE: casevault-front
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_EC2_METADATA_DISABLED: true
+        AWS_DEFAULT_REGION: us-east-1
+      run: |
+        aws ecs update-service --cluster ${ECS_CLUSTER} --service ${ECS_SERVICE} --force-new-deployment
+        
+    - name: Update ECS Service - Backend
+      env:
+        IMAGE_TAG: ${{ github.sha }}
+        ECS_CLUSTER: casevault-cluster
+        ECS_SERVICE: casevault-back
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_EC2_METADATA_DISABLED: true
+        AWS_DEFAULT_REGION: us-east-1 
+      run: |
+        aws ecs update-service --cluster ${ECS_CLUSTER} --service ${ECS_SERVICE} --force-new-deployment

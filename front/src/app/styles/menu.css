@@ -1,0 +1,19 @@
+.menu-container {
+  background-color: black;
+  margin-top: 100px;
+}
+.sidebar-container {
+  width: 20%;
+  
+}
+.casegrid-container {
+  margin-left: 100px;
+  width: 90%;
+}
+
+.title{
+  color: white;
+  margin-left: 15%;
+  margin-top: 0;
+  font-style: oblique;
+}

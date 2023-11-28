@@ -1,0 +1,55 @@
+{
+    "containerDefinitions": [
+        {
+            "name": "front",
+            "image": "780539339462.dkr.ecr.us-east-1.amazonaws.com/casevault:front-GITHUB_SHA",
+            "cpu": 0,
+            "portMappings": [
+                {
+                    "name": "front-3001-tcp",
+                    "containerPort": 3001,
+                    "hostPort": 3001,
+                    "protocol": "tcp",
+                    "appProtocol": "http"
+                }
+            ],
+            "essential": true,
+            "environment": [],
+            "environmentFiles": [],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "ulimits": [],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-create-group": "true",
+                    "awslogs-group": "/ecs/front-taskdefinition",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "ecs"
+                },
+                "secretOptions": []
+            }
+        }
+    ],
+    "family": "front-taskdefinition",
+    "taskRoleArn": "arn:aws:iam::780539339462:role/ecsTaskExecutionRole",
+    "executionRoleArn": "arn:aws:iam::780539339462:role/ecsTaskExecutionRole",
+    "networkMode": "awsvpc",
+    "volumes": [],
+    "placementConstraints": [],
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "1024",
+    "memory": "3072",
+    "runtimePlatform": {
+        "cpuArchitecture": "X86_64",
+        "operatingSystemFamily": "LINUX"
+    },
+    "tags": [
+        {
+            "key": "label",
+            "value": "value"
+        }
+    ]
+}
